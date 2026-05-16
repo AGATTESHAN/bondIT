@@ -97,11 +97,37 @@ Return ONLY valid JSON:
 }
 
 export async function askAI(question, context) {
-  const prompt = `
-You are bondIT AI Engine — MODE 4: RELATIONSHIP QUERY.
+  try {
+    const res = await fetch(GEMINI_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ 
+          parts: [{ 
+            text: `You are bondIT AI Engine — MODE 4: RELATIONSHIP QUERY.
 Context data: ${JSON.stringify(context)}
 Admin question: "${question}"
-Answer in plain, professional English in 2-3 sentences. Be specific with names and numbers.
-Return ONLY a JSON object: { "answer": "your answer here" }`;
-  return callGemini(prompt);
+Answer in plain, professional English in 2-3 sentences. Be specific with names and numbers.` 
+          }] 
+        }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "OBJECT",
+            properties: {
+              answer: { type: "STRING" }
+            },
+            required: ["answer"]
+          }
+        }
+      }),
+    });
+
+    const data = await res.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    return JSON.parse(text.trim());
+  } catch (error) {
+    console.error("askAI failed to parse layout:", error);
+    return null;
+  }
 }
