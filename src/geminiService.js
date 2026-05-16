@@ -107,7 +107,7 @@ export async function askAI(question, context) {
             text: `You are bondIT AI Engine — MODE 4: RELATIONSHIP QUERY.
 Context data: ${JSON.stringify(context)}
 Admin question: "${question}"
-Answer in plain, professional English in 2-3 sentences. Be specific with names and numbers.` 
+Answer in plain, professional English in 2-3 sentences. Be specific with names and data metrics.` 
           }] 
         }],
         generationConfig: {
@@ -127,7 +127,7 @@ Answer in plain, professional English in 2-3 sentences. Be specific with names a
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
     return JSON.parse(text.trim());
   } catch (error) {
-    console.error("askAI failed to parse layout:", error);
+    console.error("askAI failed to parse layout correctly:", error);
     return null;
   }
 }
