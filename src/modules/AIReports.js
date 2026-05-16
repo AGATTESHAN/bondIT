@@ -45,14 +45,24 @@ export default function AIReports({ sharedState = {} }) {
 
     setMessages(m => [...m, { role: "user", text: q }]);
     
-    // Only clear input if user manually pressed send or typed enter 
+    // Only clear input if user manually typed and pressed send or Enter
     if (!question) {
       setInput("");
     }
 
     setLoading(true);
+    
+    // TOKEN OPTIMIZATION: Condense payload to save substantial amounts of free-tier token space
+    const optimizedContext = {
+      applicants: context.applicants.map(a => ({ id: a.id, name: a.name, score: a.compatibility_score, grade: a.grade })),
+      employees: context.employees.map(e => ({ id: e.id, name: e.name, department: e.department })),
+      assignments: context.assignments,
+      departments: context.departments,
+      weeklyRatings: context.weeklyRatings
+    };
+
     try {
-      const res = await askAI(q, context);
+      const res = await askAI(q, optimizedContext);
       
       // Resilient fallback configuration
       const answer = res?.answer || 
@@ -154,20 +164,4 @@ export default function AIReports({ sharedState = {} }) {
                 { label: "Employee → Department", count: context.assignments.length || context.employees.length, color: "#0f766e", desc: "Assignment relationships" },
                 { label: "Employee → Performance", count: totalRatingsCount, color: "#7c3aed", desc: "Rating entities" },
               ].map(r => (
-                <div key={r.label} style={{ padding: "10px 12px", background: "#f8fafc", borderRadius: 8, border: "1px solid var(--border)", borderLeft: `3px solid ${r.color}` }}>
-                  <div className="flex-between">
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: 12 }}>{r.label}</div>
-                      <div className="text-sm">{r.desc}</div>
-                    </div>
-                    <span className="badge badge-blue">{r.count}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+                <div key={r.label} style={{ padding: "10px 12px", background: "#f8fafc", borderRadius: 8, border: "1px solid var(--border)", borderLeft: `3px solid ${
