@@ -164,4 +164,20 @@ export default function AIReports({ sharedState = {} }) {
                 { label: "Employee → Department", count: context.assignments.length || context.employees.length, color: "#0f766e", desc: "Assignment relationships" },
                 { label: "Employee → Performance", count: totalRatingsCount, color: "#7c3aed", desc: "Rating entities" },
               ].map(r => (
-                <div key={r.label} style={{ padding: "10px 12px", background: "#f8fafc", borderRadius: 8, border: "1px solid var(--border)", borderLeft: `3px solid ${
+                <div key={r.label} style={{ padding: "10px 12px", background: "#f8fafc", borderRadius: 8, border: "1px solid var(--border)", borderLeft: `3px solid ${r.color}` }}>
+                  <div className="flex-between">
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 12 }}>{r.label}</div>
+                      <div className="text-sm">{r.desc}</div>
+                    </div>
+                    <span className="badge badge-blue">{r.count}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
