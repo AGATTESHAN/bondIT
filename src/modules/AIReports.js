@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FileText, Send, Brain, Download } from "lucide-react";
+import { Send, Brain } from "lucide-react";
 import { askAI } from "../geminiService";
 import { mockApplicants, mockDepartments, mockWeeklyRatings } from "../mockData";
 
@@ -11,8 +11,14 @@ const QUICK_QUESTIONS = [
   "Which applicants were rejected and why?",
 ];
 
-export default function AIReports({ sharedState }) {
-  const { scoredApplicants, hiredEmployees, assignments, weeklyRatings } = sharedState;
+export default function AIReports({ sharedState = {} }) {
+  const { 
+    scoredApplicants = [], 
+    hiredEmployees = [], 
+    assignments = [], 
+    weeklyRatings = [] 
+  } = sharedState;
+
   const [messages, setMessages] = useState([
     { role: "ai", text: "Hello! I'm the bondIT AI Engine. Ask me anything about your applicants, employees, department assignments, or performance data." }
   ]);
@@ -21,21 +27,38 @@ export default function AIReports({ sharedState }) {
 
   const context = {
     applicants: scoredApplicants.length ? scoredApplicants : mockApplicants,
-    employees: hiredEmployees.length ? hiredEmployees : mockApplicants.slice(0, 5),
+    employees: hiredEmployees.length ? hiredEmployees : [],
     assignments: assignments.length ? assignments : [],
     departments: mockDepartments,
     weeklyRatings: weeklyRatings.length ? weeklyRatings : mockWeeklyRatings,
   };
 
+  // Safe entity rating counter helper
+  const totalRatingsCount = context.weeklyRatings.reduce(
+    (a, w) => a + Object.keys(w?.ratings || {}).length, 
+    0
+  );
+
   const sendMessage = async (question) => {
     const q = question || input.trim();
     if (!q) return;
+
     setMessages(m => [...m, { role: "user", text: q }]);
-    setInput("");
+    
+    // Only clear input if user manually pressed send or typed enter 
+    if (!question) {
+      setInput("");
+    }
+
     setLoading(true);
     try {
       const res = await askAI(q, context);
-      const answer = res?.answer || "I couldn't retrieve a specific answer. Please check that your data is loaded and try again.";
+      
+      // Resilient fallback configuration
+      const answer = res?.answer || 
+                     (typeof res === "string" ? res : null) || 
+                     "I couldn't retrieve a specific answer. Please check that your data is loaded and try again.";
+                     
       setMessages(m => [...m, { role: "ai", text: answer }]);
     } catch {
       setMessages(m => [...m, { role: "ai", text: "AI query failed. Please check your Gemini API key in the .env file." }]);
@@ -47,7 +70,7 @@ export default function AIReports({ sharedState }) {
     { label: "Total Applicants", value: context.applicants.length, sub: "in registry" },
     { label: "Hired Employees", value: context.employees.length, sub: "confirmed" },
     { label: "Departments Active", value: mockDepartments.length, sub: "in system" },
-    { label: "Relationship Entities", value: context.applicants.length + context.assignments.length + context.weeklyRatings.reduce((a, w) => a + Object.keys(w.ratings).length, 0), sub: "formed by AI" },
+    { label: "Relationship Entities", value: context.applicants.length + context.assignments.length + totalRatingsCount, sub: "formed by AI" },
   ];
 
   return (
@@ -129,7 +152,7 @@ export default function AIReports({ sharedState }) {
               {[
                 { label: "Applicant → Company", count: context.applicants.length, color: "#2563eb", desc: "Compatibility relationships" },
                 { label: "Employee → Department", count: context.assignments.length || context.employees.length, color: "#0f766e", desc: "Assignment relationships" },
-                { label: "Employee → Performance", count: context.weeklyRatings.length * context.employees.length, color: "#7c3aed", desc: "Rating entities" },
+                { label: "Employee → Performance", count: totalRatingsCount, color: "#7c3aed", desc: "Rating entities" },
               ].map(r => (
                 <div key={r.label} style={{ padding: "10px 12px", background: "#f8fafc", borderRadius: 8, border: "1px solid var(--border)", borderLeft: `3px solid ${r.color}` }}>
                   <div className="flex-between">
